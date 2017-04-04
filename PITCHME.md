@@ -60,10 +60,12 @@ end
 Може и по-кратко:
 
 ```elixir
-if (<condition>), do: <do_stuff>, else: <do_other_stuff>
+if <condition>, do: <do_stuff>, else: <do_other_stuff>
+
+unless <condition>, do: <do_other_stuff>, else: <do_stuff>
 ```
 
-Тъй като `if` и `unless` са макроси, които приемат "клаузите" си като (почти) key-value двойки и ги оценяват *мързеливо*, може всяка една от двете клаузи да бъде изпусната.
+Тъй като `if` и `unless` са макроси, които приемат "клаузите" си като (почти) key-value двойки и ги оценяват *мързеливо*, може клаузата `else` да бъде изпусната.
 
 #HSLIDE
 
@@ -143,7 +145,7 @@ def fib(n) when is_integer(n) and n > 1, do: fib(n-1) + fib(n-2)
 
 #HSLIDE
 
-В Elixir грешките (*изключенията*) са `*Error` - `FunctionClauseError`, `MatchError`, `RunTimeError` и около 30 други.
+В Elixir грешките (*изключенията*) са `*Error` - `FunctionClauseError`, `MatchError`, `RuntimeError` и около 30 други.
 
 Всеки вид изключение има свое съобщение (стринг), което се достъпва с `.message`
 Нека се върнем назад до примерите с `fib(n)`...
@@ -164,9 +166,9 @@ iex> raise RuntimeError, message: "oops!" # тип + съобщение
 
 #HSLIDE
 
-...но се хващат по един начин с `rescue`.
+...но се хващат по един начин с `rescue` и pattern matching.
 ```elixir
-try
+try do
   <do_something_dangerous>
 rescue
   [FunctionClauseError, RuntimeError] -> IO.puts "normal stuff"
@@ -191,7 +193,7 @@ iex> File.read "existing.file"
 {:ok, "file contents, iei"}
 
 iex> File.read! "no_such.file"
-** (File.Error) could not read file "no_such.file": no such file or directory
+** (File.Error) could not read ... нещо си
 
 iex> File.read! "existing.file"
 "file contents, iei"
@@ -211,6 +213,10 @@ def checkFile!(str) when is_binary(str) do
   body = File.read! str # може да хвърли File.Error
   IO.puts "I am #{String.length(body)} bytes long!"
 end
+
+def checkFile2(str) when is_binary(str) do
+  {:ok, body} = File.read str # НЕ правете така
+end
 ```
 
 #HSLIDE
@@ -219,7 +225,6 @@ end
 ```elixir
 defmodule PrincessError do
   # message - задължително, други полета са по избор
-  # на практика това е структура!
   defexception message: "save me!", name: "Alex"
 
   def oops do
@@ -229,6 +234,7 @@ defmodule PrincessError do
       pr in PrincessError ->
         IO.puts "Caught #{pr.name} - she said \"#{pr.message}\""
     end
+  end
 end
 
 iex> PrincessError.oops
@@ -275,10 +281,18 @@ end # и процесът всъщност остава жив
 
 #HSLIDE
 
-## За целите на този курс се забраняват (освен ако не е необходимо или изрично указано иначе):
+##№ За целите на този курс се забраняват (освен ако не е необходимо или изрично указано иначе):
 * `if, unless, cond`
 * `try/catch`
 * `try/rescue`
+
+#HSLIDE
+
+## IO
+
+#HSLIDE
+
+iei
 
 #HSLIDE
 
@@ -294,10 +308,6 @@ end # и процесът всъщност остава жив
 
 ```elixir
 % # създава структура (по име и, евентуално, полета)
-  defmodule User do
-    defstruct name: "John", age: 27
-  end
-  u = %User{}, v = %User{u | age: 35}
 
 %{} # създава празен Map, реално еквивалентно на Map.new
 
@@ -314,10 +324,13 @@ end # и процесът всъщност остава жив
 ```elixir
 <<args>> # създава bitstring
 left :: right # указва опции за bitstring
+
 left . right # създава alias или извиква функция от alias
              # зависи дали right е в кавички или с каква буква започва
+
 left = right # pattern matching
 ^var # pin оператор - pattern matching без променяне на стойността
+
 alias, case, cond, (fn..end), for, import,
 receive, require, try, quote, unquote, with и други...
 ```
@@ -330,7 +343,3 @@ and, or, not, !, &&, ||, .., <>
 def, defp, defmacro, defmacrop, defstruct
 if, in, is_*, raise, |> и други...
 ```
-
-#HSLIDE
-
-iei
