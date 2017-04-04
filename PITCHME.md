@@ -34,14 +34,6 @@ end
 
 #HSLIDE
 
-Може и по-кратко:
-
-```elixir
-if (<condition>), do: <do_stuff>, else: <do_other_stuff>
-```
-
-#HSLIDE
-
 `if` си има и брат-близнак - `unless`.
 Той обаче не е по-малко зъл!
 Следните две парчета код са еквивалентни:
@@ -64,6 +56,12 @@ end
 </tr></table>
 
 #HSLIDE
+
+Може и по-кратко:
+
+```elixir
+if (<condition>), do: <do_stuff>, else: <do_other_stuff>
+```
 
 Тъй като `if` и `unless` са макроси, които приемат "клаузите" си като (почти) key-value двойки и ги оценяват *мързеливо*, може всяка една от двете клаузи да бъде изпусната.
 
@@ -122,8 +120,7 @@ end
 
 #HSLIDE
 
-### ... and mighty pattern matching:
-
+... and mighty pattern matching:
 ```elixir
 def fib(0) do: 0
 def fib(1) do: 1
@@ -132,6 +129,100 @@ def fib(n) when is_integer(n) and n > 1, do: fib(n-1) + fib(n-2)
 
 #HSLIDE
 
+Използвайте почти винаги pattern matching, а където не е удобно, може еквивалентния `case`.
+
+#HSLIDE
+
+##Exceptions
+
+#HSLIDE
+
+Част от общата концепция на Elixir и Erlang е грешките да бъдат фатални и да убиват процеса, в който са възникнали. Нека някой друг процес (supervisor) се оправя с проблема.
+
+Например - ако работим с файлове, задачата на една нишка е просто да го отвори и прочете - какво се случва, ако файлът липсва (а не трябва), е проблем на някоя друга нишка.
+
+#HSLIDE
+
+В Elixir грешките (*изключенията*) са `*Error` - `FunctionClauseError`, `MatchError`, `RunTimeError` и около 30 други.
+
+Изключения се хвърлят с `raise` по няколко начина...
 ```elixir
-# iei
+iex> raise "oops!" # просто съобщение
+** (RuntimeError) oops!
+
+iex> raise RuntimeError # изричен тип грешка
+** (RuntimeError) runtime error
+
+iex> raise RuntimeError, message: "oops!" # тип + съобщение
+** (RuntimeError) oops!
 ```
+Всеки вид изключение има свое съобщение (стринг), което се достъпва с `.message`
+
+#HSLIDE
+
+...но се хващат по един начин с `rescue`.
+```elixir
+try
+  <do_something_dangerous>
+rescue
+  [FunctionClauseError, RuntimeError] -> IO.puts "normal stuff"
+  e in [ArithmeticError] -> IO.puts "Do the math: #{e.message}"
+  other ->
+    IO.puts "IDK what you did there..."
+    raise other, [message: "too late, we're doomed"], System.stacktrace
+after # optional
+  IO.puts "whew"
+end
+```
+
+#HSLIDE
+
+На практика `try/rescue` конструкцията също се използва рядко. Алтернативата е - познайте - pattern matching!
+Доста от стандартните функции имат два варианта.
+```elixir
+iex> File.read "no_such.file"
+{:error, :enoent}
+iex> File.read "existing.file"
+{:ok, "file contents, iei"}
+```
+
+#HSLIDE
+
+```elixir
+def checkFile(str) when is_binary(str) do
+  case File.read str do
+    {:ok, body}      -> IO.puts "iei" # тук обработваме съдържанието body като стринг
+    {:error, reason} -> IO.puts "Oops: #{reason}"
+  end
+end
+
+def checkFile!(str) when is_binary(str) do
+  body = File.read! str # може да хвърли File.Error
+  IO.puts "I am #{String.length(body)} bytes long!" # тук правим каквото искаме
+end
+```
+
+#HSLIDE
+
+Да дефинираме свое изключение (и да спасим принцесата):
+```elixir
+defmodule PrincessError
+  # message - силно желателно, други полета са по избор
+  defexception message: "save me!", name: "Alex"
+
+  def oops do
+    try
+      raise PrincessError
+    rescue
+      e in PrincessError -> IO.puts "Caught #{e.name} - she said \"#{e.message}\""
+    end
+end
+
+iex> PrincessError.oops
+Caught Alex - she said "save me!"
+:ok
+```
+
+#HSLIDE
+
+iei
